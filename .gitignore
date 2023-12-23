@@ -1,0 +1,17 @@
+.vs/
+x64/
+
+*.obj
+*.iobj
+*.pdb
+*.ipdb
+*.db
+*.ipch
+*.tlog
+*.sarif
+*.log
+*.recipe
+*.command
+*.txt
+*.idb
+*.ilk
